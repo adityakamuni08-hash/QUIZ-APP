@@ -84,7 +84,7 @@ $env:SPRING_DATASOURCE_PASSWORD="your_mysql_password"
 ### Step 2: Start the Backend (Spring Boot)
 Navigate to the backend directory and run the Maven wrapper:
 ```powershell
-cd C:\Aditya_Project\backend\quiz_application
+cd C:\Aditya_Project\backend
 .\mvnw.cmd spring-boot:run
 ```
 The backend server will start on **`http://localhost:8080`**.
@@ -104,7 +104,7 @@ The React development server will start on **`http://localhost:5173`**.
 
 To execute the backend automated test suite:
 ```powershell
-cd C:\Aditya_Project\backend\quiz_application
+cd C:\Aditya_Project\backend
 .\mvnw.cmd test
 ```
 *All 10 unit and service integration tests run against an isolated in-memory H2 database and do not touch external databases.*
