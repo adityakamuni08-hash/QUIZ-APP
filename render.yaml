@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: quiz-app-backend
+    runtime: java
+    rootDir: backend
+    buildCommand: "./mvnw package -DskipTests"
+    startCommand: "java -jar target/quiz_application-0.0.1-SNAPSHOT.jar"
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        sync: false
