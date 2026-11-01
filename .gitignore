@@ -1,0 +1,27 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Maven build output
+**/target/
+**/.mvn/wrapper/maven-wrapper.jar
+
+# Node dependencies and build output
+**/node_modules/
+**/dist/
+**/build/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+Thumbs.db
+.DS_Store
