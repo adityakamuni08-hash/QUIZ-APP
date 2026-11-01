@@ -23,6 +23,7 @@ export const AuthProvider = ({ children }) => {
         try {
           const res = await authApi.getMe();
           setUser(res.data);
+          setToken(storedToken); // ensure token state stays in sync with localStorage
           localStorage.setItem('user', JSON.stringify(res.data));
         } catch {
           // Token invalid or expired

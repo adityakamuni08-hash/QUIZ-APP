@@ -114,7 +114,7 @@ const AttemptHistoryPage = () => {
                     </td>
                     <td>
                       <span className={`badge ${isPassed ? 'badge-success' : 'badge-danger'}`}>
-                        {item.percentage}%
+                        {typeof item.percentage === 'number' ? item.percentage.toFixed(1) : item.percentage}%
                       </span>
                     </td>
                     <td>

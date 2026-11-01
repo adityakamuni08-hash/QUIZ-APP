@@ -55,9 +55,26 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             if (elapsedMinutes < (quiz.getDurationMinutes() + 2)) {
                 return mapToResultDto(existing, false);
             } else {
-                // Auto mark timed out
+                // Auto mark timed out — score submitted answers that already exist
                 existing.setStatus(AttemptStatus.TIMED_OUT);
                 existing.setSubmittedAt(existing.getStartedAt().plusMinutes(quiz.getDurationMinutes()));
+                // Recalculate score from any already-submitted answers
+                if (existing.getSubmittedAnswers() != null && !existing.getSubmittedAnswers().isEmpty()) {
+                    int scored = existing.getSubmittedAnswers().stream()
+                            .mapToInt(SubmittedAnswer::getAwardedMarks)
+                            .sum();
+                    int correct = (int) existing.getSubmittedAnswers().stream().filter(SubmittedAnswer::isCorrect).count();
+                    int incorrect = (int) existing.getSubmittedAnswers().stream()
+                            .filter(a -> !a.isCorrect() && a.getSelectedOption() != null).count();
+                    int unanswered = (int) existing.getSubmittedAnswers().stream()
+                            .filter(a -> a.getSelectedOption() == null).count();
+                    double pct = existing.getTotalMarks() > 0 ? (scored * 100.0) / existing.getTotalMarks() : 0.0;
+                    existing.setScore(scored);
+                    existing.setPercentage(Math.round(pct * 100.0) / 100.0);
+                    existing.setCorrectAnswersCount(correct);
+                    existing.setIncorrectAnswersCount(incorrect);
+                    existing.setUnansweredCount(unanswered);
+                }
                 attemptRepository.save(existing);
             }
         }
@@ -173,8 +190,13 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         attempt.setIncorrectAnswersCount(incorrectCount);
         attempt.setUnansweredCount(unansweredCount);
 
+        if (attempt.getSubmittedAnswers() == null) {
+            attempt.setSubmittedAnswers(new ArrayList<>());
+        } else {
+            attempt.getSubmittedAnswers().clear();
+        }
+        attempt.getSubmittedAnswers().addAll(submittedAnswers);
         submittedAnswerRepository.saveAll(submittedAnswers);
-        attempt.setSubmittedAnswers(submittedAnswers);
         QuizAttempt savedAttempt = attemptRepository.save(attempt);
 
         return mapToResultDto(savedAttempt, true);
@@ -237,11 +259,23 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             }
         }
 
+        int durationMins = (attempt.getQuiz() != null && attempt.getQuiz().getDurationMinutes() != null)
+                ? attempt.getQuiz().getDurationMinutes()
+                : 15;
+        long elapsedSeconds = attempt.getStartedAt() != null
+                ? Math.max(0, Duration.between(attempt.getStartedAt(), LocalDateTime.now()).getSeconds())
+                : 0;
+        int remainingSeconds = attempt.getStatus() == AttemptStatus.IN_PROGRESS
+                ? (int) Math.max(0, (durationMins * 60L) - elapsedSeconds)
+                : 0;
+
         return AttemptResultDto.builder()
                 .attemptId(attempt.getId())
                 .quizId(attempt.getQuiz().getId())
                 .quizTitle(attempt.getQuiz().getTitle())
                 .category(attempt.getQuiz().getCategory())
+                .durationMinutes(durationMins)
+                .remainingSeconds(remainingSeconds)
                 .score(attempt.getScore())
                 .totalMarks(attempt.getTotalMarks())
                 .percentage(attempt.getPercentage())

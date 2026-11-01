@@ -31,4 +31,7 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
 
     @Query("SELECT MAX(qa.percentage) FROM QuizAttempt qa WHERE qa.student.id = :studentId AND qa.status = 'COMPLETED'")
     Double getMaxPercentageByStudentId(@Param("studentId") Long studentId);
+
+    @Query("SELECT qa FROM QuizAttempt qa WHERE qa.status IN ('COMPLETED', 'TIMED_OUT')")
+    List<QuizAttempt> findAllCompletedOrTimedOut();
 }

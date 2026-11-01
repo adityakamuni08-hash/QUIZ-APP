@@ -29,3 +29,5 @@ Thumbs.db
 # Documents
 *.docx
 
+
+.vercel

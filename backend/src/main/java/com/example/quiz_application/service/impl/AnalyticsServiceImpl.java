@@ -91,13 +91,9 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     public AdminAnalyticsDto getAdminAnalytics() {
         long totalQuizzes = quizRepository.count();
         long publishedQuizzes = quizRepository.findByPublishedTrue().size();
-        long totalStudents = userRepository.findAll().stream()
-                .filter(u -> u.getRole() == Role.ROLE_STUDENT)
-                .count();
+        long totalStudents = userRepository.countByRole(Role.ROLE_STUDENT);
 
-        List<QuizAttempt> allAttempts = attemptRepository.findAll().stream()
-                .filter(a -> a.getStatus() == AttemptStatus.COMPLETED || a.getStatus() == AttemptStatus.TIMED_OUT)
-                .collect(Collectors.toList());
+        List<QuizAttempt> allAttempts = attemptRepository.findAllCompletedOrTimedOut();
 
         long totalAttempts = allAttempts.size();
         double platformAvg = allAttempts.stream().mapToDouble(QuizAttempt::getPercentage).average().orElse(0.0);

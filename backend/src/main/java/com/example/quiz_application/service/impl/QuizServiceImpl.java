@@ -84,6 +84,36 @@ public class QuizServiceImpl implements QuizService {
         quiz.setDurationMinutes(dto.getDurationMinutes());
         quiz.setPublished(dto.isPublished());
 
+        // If questions are included in the update payload, replace them and recalculate marks
+        if (dto.getQuestions() != null && !dto.getQuestions().isEmpty()) {
+            quiz.getQuestions().clear();
+            int calculatedMarks = 0;
+            for (int i = 0; i < dto.getQuestions().size(); i++) {
+                QuestionDto qDto = dto.getQuestions().get(i);
+                Question question = Question.builder()
+                        .questionText(qDto.getQuestionText().trim())
+                        .marks(qDto.getMarks() != null ? qDto.getMarks() : 1)
+                        .questionOrder(qDto.getQuestionOrder() != null ? qDto.getQuestionOrder() : i + 1)
+                        .build();
+
+                calculatedMarks += question.getMarks();
+
+                if (qDto.getOptions() != null) {
+                    for (int j = 0; j < qDto.getOptions().size(); j++) {
+                        OptionDto oDto = qDto.getOptions().get(j);
+                        AnswerOption option = AnswerOption.builder()
+                                .optionText(oDto.getOptionText().trim())
+                                .optionOrder(oDto.getOptionOrder() != null ? oDto.getOptionOrder() : j + 1)
+                                .correct(oDto.isCorrect())
+                                .build();
+                        question.addOption(option);
+                    }
+                }
+                quiz.addQuestion(question);
+            }
+            quiz.setTotalMarks(calculatedMarks);
+        }
+
         if (quiz.isPublished()) {
             validateQuizForPublish(quiz);
         }

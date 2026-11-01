@@ -54,6 +54,7 @@ const QuizResultPage = () => {
   }
 
   const isPassed = (result.percentage || 0) >= 50.0;
+  const displayPercentage = typeof result.percentage === 'number' ? result.percentage.toFixed(1) : '0.0';
   const formattedDate = result.submittedAt
     ? new Date(result.submittedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
     : 'Recently';
@@ -87,7 +88,7 @@ const QuizResultPage = () => {
           margin: '0.75rem 0',
           background: isPassed ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'
         }}>
-          <span style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1 }}>{result.percentage}%</span>
+          <span style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1 }}>{displayPercentage}%</span>
           <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', marginTop: '0.25rem' }}>
             {isPassed ? 'Passed' : 'Needs Work'}
           </span>

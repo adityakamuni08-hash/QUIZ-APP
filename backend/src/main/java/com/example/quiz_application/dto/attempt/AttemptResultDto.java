@@ -18,6 +18,8 @@ public class AttemptResultDto {
     private Long quizId;
     private String quizTitle;
     private String category;
+    private Integer durationMinutes;
+    private Integer remainingSeconds;
     private Integer score;
     private Integer totalMarks;
     private Double percentage;

@@ -30,6 +30,7 @@ const QuizTakePage = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const timerRef = useRef(null);
+  const selectedAnswersRef = useRef({});
 
   useEffect(() => {
     initQuizAttempt();
@@ -53,13 +54,35 @@ const QuizTakePage = () => {
       setQuiz(quizData);
       setAttemptId(attemptData.attemptId);
 
-      // Calculate initial remaining seconds
-      const startedAt = new Date(attemptData.startedAt).getTime();
-      const now = Date.now();
-      const elapsedSeconds = Math.floor((now - startedAt) / 1000);
-      const totalSeconds = (quizData.durationMinutes || 15) * 60;
-      const remaining = Math.max(0, totalSeconds - elapsedSeconds);
+      // If attempt is already completed or timed out, navigate to result immediately
+      if (attemptData.status === 'COMPLETED' || attemptData.status === 'TIMED_OUT') {
+        navigate(`/quiz/result/${attemptData.attemptId}`);
+        return;
+      }
+
+      // Use durationMinutes from attempt response (authoritative) falling back to quiz data
+      const durationMinutes = attemptData.durationMinutes || quizData.durationMinutes || 15;
+
+      // Calculate initial remaining seconds: prefer server-computed remainingSeconds to prevent timezone/clock skew
+      let remaining;
+      if (typeof attemptData.remainingSeconds === 'number') {
+        remaining = attemptData.remainingSeconds;
+      } else {
+        const rawStarted = attemptData.startedAt || new Date().toISOString();
+        const startedIso = (!rawStarted.endsWith('Z') && !rawStarted.includes('+')) ? `${rawStarted}Z` : rawStarted;
+        const startedAt = new Date(startedIso).getTime();
+        const now = Date.now();
+        const elapsedSeconds = Math.max(0, Math.floor((now - startedAt) / 1000));
+        const totalSeconds = durationMinutes * 60;
+        remaining = Math.max(0, totalSeconds - elapsedSeconds);
+      }
       setTimeLeftSeconds(remaining);
+
+      // If time is already up, auto-submit immediately
+      if (remaining === 0) {
+        handleAutoSubmit(attemptData.attemptId);
+        return;
+      }
 
       // Start countdown timer
       timerRef.current = setInterval(() => {
@@ -81,16 +104,18 @@ const QuizTakePage = () => {
   };
 
   const handleSelectOption = (questionId, optionId) => {
-    setSelectedAnswers((prev) => ({
-      ...prev,
-      [questionId]: optionId,
-    }));
+    setSelectedAnswers((prev) => {
+      const updated = { ...prev, [questionId]: optionId };
+      selectedAnswersRef.current = updated;
+      return updated;
+    });
   };
 
   const handleClearAnswer = (questionId) => {
     setSelectedAnswers((prev) => {
       const copy = { ...prev };
       delete copy[questionId];
+      selectedAnswersRef.current = copy;
       return copy;
     });
   };
@@ -99,7 +124,9 @@ const QuizTakePage = () => {
     if (submitting) return;
     setSubmitting(true);
     try {
-      const answersPayload = Object.entries(selectedAnswers).map(([qId, oId]) => ({
+      // Use the ref to get the latest answers, avoiding stale closure from setInterval
+      const latestAnswers = selectedAnswersRef.current;
+      const answersPayload = Object.entries(latestAnswers).map(([qId, oId]) => ({
         questionId: Number(qId),
         selectedOptionId: Number(oId),
       }));
@@ -111,6 +138,11 @@ const QuizTakePage = () => {
 
       navigate(`/quiz/result/${attemptIdToSubmit || attemptId}`);
     } catch (err) {
+      const targetId = attemptIdToSubmit || attemptId;
+      if (targetId && (err.response?.status === 400 || err.response?.status === 409 || err.response?.data?.message?.toLowerCase().includes('already'))) {
+        navigate(`/quiz/result/${targetId}`);
+        return;
+      }
       setError('Time expired and auto-submission encountered an issue: ' + (err.response?.data?.message || err.message));
       setSubmitting(false);
     }
@@ -134,6 +166,10 @@ const QuizTakePage = () => {
 
       navigate(`/quiz/result/${attemptId}`);
     } catch (err) {
+      if (attemptId && (err.response?.status === 400 || err.response?.status === 409 || err.response?.data?.message?.toLowerCase().includes('already'))) {
+        navigate(`/quiz/result/${attemptId}`);
+        return;
+      }
       setError(err.response?.data?.message || 'Failed to submit quiz. Please try again.');
       setSubmitting(false);
     }
