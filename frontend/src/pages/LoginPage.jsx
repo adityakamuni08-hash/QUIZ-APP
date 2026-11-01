@@ -31,7 +31,10 @@ const LoginPage = () => {
         navigate('/dashboard');
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Invalid email or password. Please verify your credentials.';
+      const msg = err.response?.data?.message 
+        || (err.code === 'ERR_NETWORK' || !err.response 
+            ? 'Cannot connect to the backend server. Please verify your backend URL in .env and make sure it is running.' 
+            : 'Invalid email or password. Please verify your credentials.');
       setError(msg);
     } finally {
       setIsSubmitting(false);

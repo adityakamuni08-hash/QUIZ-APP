@@ -38,7 +38,10 @@ const RegisterPage = () => {
         navigate('/dashboard');
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Registration failed. Email may already be registered.';
+      const msg = err.response?.data?.message 
+        || (err.code === 'ERR_NETWORK' || !err.response 
+            ? 'Cannot connect to the backend server. Please verify your backend URL in .env and make sure it is running.' 
+            : 'Registration failed. Please try again.');
       setError(msg);
     } finally {
       setIsSubmitting(false);
