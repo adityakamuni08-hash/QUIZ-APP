@@ -93,7 +93,9 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         long publishedQuizzes = quizRepository.findByPublishedTrue().size();
         long totalStudents = userRepository.countByRole(Role.ROLE_STUDENT);
 
-        List<QuizAttempt> allAttempts = attemptRepository.findAllCompletedOrTimedOut();
+        List<QuizAttempt> allAttempts = attemptRepository.findByStatusIn(
+                List.of(AttemptStatus.COMPLETED, AttemptStatus.TIMED_OUT)
+        );
 
         long totalAttempts = allAttempts.size();
         double platformAvg = allAttempts.stream().mapToDouble(QuizAttempt::getPercentage).average().orElse(0.0);

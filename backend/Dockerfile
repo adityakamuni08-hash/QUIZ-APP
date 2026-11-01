@@ -26,5 +26,5 @@ COPY --from=builder /app/target/quiz_application-0.0.1-SNAPSHOT.jar app.jar
 # Expose the port Spring Boot listens on (Render injects $PORT)
 EXPOSE 8080
 
-# Start the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Start the application with RAM limits tailored for container environments
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-XX:+UseG1GC", "-jar", "app.jar"]
